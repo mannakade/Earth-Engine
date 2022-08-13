@@ -1,0 +1,64 @@
+var dataset = ee.ImageCollection('IDAHO_EPSCOR/TERRACLIMATE')
+                  .filter(ee.Filter.date('2017-07-01', '2021-07-01'));
+var maximumTemperature = dataset.select('tmmx');
+var maximumTemperatureVis = {
+  min: -300.0,
+  max: 300.0,
+  palette: [
+    '1a3678', '2955bc', '5699ff', '8dbae9', 'acd1ff', 'caebff', 'e5f9ff',
+    'fdffb4', 'ffe6a2', 'ffc969', 'ffa12d', 'ff7c1f', 'ca531a', 'ff0000',
+    'ab0000'
+  ],
+};
+Map.setCenter(-122.128, 37.3616, 15);
+Map.addLayer(maximumTemperature, maximumTemperatureVis, 'Maximum Temperature');
+
+
+//Test Annotation
+
+var text = require('users/gena/packages:text');
+var geometry = ee.Geometry.Point([37.36160, -122.12830]);
+
+var rgbVisParam = {
+  bands: ['red' , 'green' , 'blue'],
+  gamma: 1 ,
+  max: 12000 ,
+  min: 8114 ,
+  opacity: 1
+};
+
+var aoi = ee.Geometry.Rectangle(37.32556, -122.05440, 37.84357, -121.97749);
+var videoArgs = {
+  region: aoi,
+  scale: 10,
+  framesPerSecond: 5
+};
+
+var annotations = [{
+    position: 'left',
+    offset: '5%',
+    margin: '5%',
+    property: 'label',
+    scale: 30
+}];
+
+function addText(image) {
+    var date = ee.String(ee.Date(image.get('system:time_start'))
+        .format(' YYYY-MM-dd'));
+
+
+    var image = image.clip(aoi).visualize(rgbVisParam)
+.set({
+        'label': date
+    });
+    // Create a new image with the label overlaid using gena's package.
+    var annotated = text.annotateImage(image, {}, bufferedBounds,
+        annotations);
+    return annotated;
+}
+
+// Add timestamp annotation to all images in video.
+//var tempCol = ic.map(addText);
+
+// Click the URL to watch the time series video.
+//print('Foothill Temp Change Video', tempCol.getVideoThumbURL(videoArgs));
